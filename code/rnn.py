@@ -96,14 +96,10 @@ class RNN(Model):
 			##########################
 			x_vec = make_onehot(x[t], self.vocab_size)
 			d_vec = make_onehot(d[t], self.vocab_size)
-			c = np.ones(y[t].shape)
-			delta_out = (d_vec - y[t])
-			a = s[t]
-			b = np.ones(s[t].shape) - s[t]
-			delta_in = (self.W.T.dot(delta_out)).dot(s[t].dot(np.ones(s[t].shape) - s[t]))
 
-			print(s[t-1])
-			print(delta_in)
+			delta_out = (d_vec - y[t])  # * (np.ones(y[t].shape))
+			delta_in = (self.W.T.dot(delta_out)) * (s[t] * (np.ones(s[t].shape) - s[t]))
+
 			self.deltaU += np.outer(delta_in, s[t-1])
 			self.deltaW += np.outer(delta_out, s[t])
 			self.deltaV += np.outer(delta_in, x_vec)
@@ -155,11 +151,11 @@ class RNN(Model):
 			##########################
 			x_vec = make_onehot(x[t], self.vocab_size)
 			d_vec = make_onehot(d[t], self.vocab_size)
-			delta_out = (d_vec[t] - y[t]).dot(np.ones(y[t]))
-			delta_in = (self.W.T * delta_out).dot(s[t].dot(np.ones(s[t]) - s[t]))
+			delta_out = (d_vec[t] - y[t])  # * (np.ones(y[t].shape))
+			delta_in = self.W.T.dot(delta_out) * (s[t] * (np.ones(s[t].shape) - s[t]))
 			self.deltaW += np.outer(delta_out, s[t])
 			for i in range(1, steps):
-				delta_in = (self.U.T * delta_in).dot(np.ones(s[t] - i) - s[t - i])
+				delta_in = self.U.T.dot(delta_in) * (s[t - i] * (np.ones(s[t - i].shape) - s[t - i]))
 			self.deltaV += np.outer(delta_in, x_vec[t - steps])
 			self.deltaU += np.outer(delta_in, s[t - steps - 1])
 
