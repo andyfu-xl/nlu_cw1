@@ -97,7 +97,7 @@ class RNN(Model):
 			x_vec = make_onehot(x[t], self.vocab_size)
 			d_vec = make_onehot(d[t], self.vocab_size)
 			c = np.ones(y[t].shape)
-			delta_out = (d_vec - y[t]).dot(np.ones(y[t].shape))
+			delta_out = (d_vec - y[t])
 			a = s[t]
 			b = np.ones(s[t].shape) - s[t]
 			delta_in = (self.W.T.dot(delta_out)).dot(s[t].dot(np.ones(s[t].shape) - s[t]))
