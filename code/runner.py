@@ -448,7 +448,8 @@ if __name__ == "__main__":
         model_runner = Runner(RNN(vocab_size, hdim, vocab_size))
         lx = model_runner.train(X_train, D_train, X_dev, D_dev)
         print(lx)
-        run_loss = -1
+        run_loss = lx
+
         adjusted_loss = -1
 
         print("Unadjusted: %.03f" % np.exp(run_loss))
