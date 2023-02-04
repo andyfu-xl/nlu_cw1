@@ -68,39 +68,39 @@ class RNN(Model):
 			xt = make_onehot(x[t], self.vocab_size)
 			curr_Vx = self.V.dot(xt)
 			prev_Uh = self.U.dot(s[t-1])
-			s[t] = curr_Vx + prev_Uh
+			s[t] = sigmoid(curr_Vx + prev_Uh)
 			y[t] = softmax(self.W.dot(s[t]))
 
 		return y, s
 
 	def acc_deltas(self, x, d, y, s):
 		'''
-		accumulate updates for V, W, U
-		standard back propagation
-		
-		this should not update V, W, U directly. instead, use deltaV, deltaW, deltaU to accumulate updates over time
-		
-		x	list of words, as indices, e.g.: [0, 4, 2]
-		d	list of words, as indices, e.g.: [4, 2, 3]
-		y	predicted output layer for x; list of probability vectors, e.g., [[0.3, 0.1, 0.1, 0.5], [0.2, 0.7, 0.05, 0.05] [...]]
-			should be part of the return value of predict(x)
-		s	predicted hidden layer for x; list of vectors, e.g., [[1.2, -2.3, 5.3, 1.0], [-2.1, -1.1, 0.2, 4.2], [...]]
-			should be part of the return value of predict(x)
-		
-		no return values
-		'''
+        accumulate updates for V, W, U
+        standard back propagation
+
+        this should not update V, W, U directly. instead, use deltaV, deltaW, deltaU to accumulate updates over time
+
+        x  list of words, as indices, e.g.: [0, 4, 2]
+        d  list of words, as indices, e.g.: [4, 2, 3]
+        y  predicted output layer for x; list of probability vectors, e.g., [[0.3, 0.1, 0.1, 0.5], [0.2, 0.7, 0.05, 0.05] [...]]
+           should be part of the return value of predict(x)
+        s  predicted hidden layer for x; list of vectors, e.g., [[1.2, -2.3, 5.3, 1.0], [-2.1, -1.1, 0.2, 4.2], [...]]
+           should be part of the return value of predict(x)
+
+        no return values
+        '''
 
 		for t in reversed(range(len(x))):
 			##########################
 			# --- your code here --- #
 			##########################
-			x_vec = make_onehot(x[t], self.vocab_size)
-			d_vec = make_onehot(d[t], self.vocab_size)
+			x_vec = make_onehot(x[t], self.out_vocab_size)
+			d_vec = make_onehot(d[t], self.out_vocab_size)
 
 			delta_out = (d_vec - y[t])  # * (np.ones(y[t].shape))
 			delta_in = (self.W.T.dot(delta_out)) * (s[t] * (np.ones(s[t].shape) - s[t]))
 
-			self.deltaU += np.outer(delta_in, s[t-1])
+			self.deltaU += np.outer(delta_in, s[t - 1])
 			self.deltaW += np.outer(delta_out, s[t])
 			self.deltaV += np.outer(delta_in, x_vec)
 
@@ -126,39 +126,41 @@ class RNN(Model):
 		##########################
 		# --- your code here --- #
 		##########################
-		
+
 	def acc_deltas_bptt(self, x, d, y, s, steps):
 		'''
-		accumulate updates for V, W, U
-		back propagation through time (BPTT)
-		
-		this should not update V, W, U directly. instead, use deltaV, deltaW, deltaU to accumulate updates over time
-		
-		x		list of words, as indices, e.g.: [0, 4, 2]
-		d		list of words, as indices, e.g.: [4, 2, 3]
-		y		predicted output layer for x; list of probability vectors, e.g., [[0.3, 0.1, 0.1, 0.5], [0.2, 0.7, 0.05, 0.05] [...]]
-				should be part of the return value of predict(x)
-		s		predicted hidden layer for x; list of vectors, e.g., [[1.2, -2.3, 5.3, 1.0], [-2.1, -1.1, 0.2, 4.2], [...]]
-				should be part of the return value of predict(x)
-		steps	number of time steps to go back in BPTT
-		
-		no return values
-		'''
+        accumulate updates for V, W, U
+        back propagation through time (BPTT)
+
+        this should not update V, W, U directly. instead, use deltaV, deltaW, deltaU to accumulate updates over time
+
+        x     list of words, as indices, e.g.: [0, 4, 2]
+        d     list of words, as indices, e.g.: [4, 2, 3]
+        y     predicted output layer for x; list of probability vectors, e.g., [[0.3, 0.1, 0.1, 0.5], [0.2, 0.7, 0.05, 0.05] [...]]
+              should be part of the return value of predict(x)
+        s     predicted hidden layer for x; list of vectors, e.g., [[1.2, -2.3, 5.3, 1.0], [-2.1, -1.1, 0.2, 4.2], [...]]
+              should be part of the return value of predict(x)
+        steps  number of time steps to go back in BPTT
+
+        no return values
+        '''
 
 		for t in reversed(range(len(x))):
 			##########################
 			# --- your code here --- #
 			##########################
-			x_vec = make_onehot(x[t], self.vocab_size)
-			d_vec = make_onehot(d[t], self.vocab_size)
-			delta_out = (d_vec[t] - y[t])  # * (np.ones(y[t].shape))
+			x_vec = make_onehot(x[t], self.out_vocab_size)
+			d_vec = make_onehot(d[t], self.out_vocab_size)
+			delta_out = (d_vec - y[t])  # * (np.ones(y[t].shape))
 			delta_in = self.W.T.dot(delta_out) * (s[t] * (np.ones(s[t].shape) - s[t]))
 			self.deltaW += np.outer(delta_out, s[t])
-			for i in range(1, steps):
-				delta_in = self.U.T.dot(delta_in) * (s[t - i] * (np.ones(s[t - i].shape) - s[t - i]))
-			self.deltaV += np.outer(delta_in, x_vec[t - steps])
-			self.deltaU += np.outer(delta_in, s[t - steps - 1])
-
+			self.deltaV += np.outer(delta_in, x_vec)
+			self.deltaU += np.outer(delta_in, s[t - 1])
+			for i in range(1, steps+1):
+				delta_in = self.U.T.dot(delta_in) * ((s[t - i] * (np.ones(s[t - i].shape) - s[t - i])))
+				x_vec = make_onehot(x[t-i], self.out_vocab_size)
+				self.deltaV += np.outer(delta_in, x_vec)
+				self.deltaU += np.outer(delta_in, s[t - i - 1])
 
 	def acc_deltas_bptt_np(self, x, d, y, s, steps):
 		'''

@@ -106,9 +106,11 @@ class Runner(object):
         ##########################
         # --- your code here --- #
         ##########################
+        length = 0
         for i in range(len(X)):
             mean_loss += self.compute_loss(X[i], D[i])
-        mean_loss /= len(X)
+            length += len(X[i])
+        mean_loss = mean_loss / length
 
         return mean_loss
 
@@ -445,12 +447,12 @@ if __name__ == "__main__":
         ##########################
         # --- your code here --- #
         ##########################
-        model_runner = Runner(RNN(vocab_size, hdim, vocab_size))
+        model = RNN(vocab_size, hdim, vocab_size)
+        model_runner = Runner(model)
         lx = model_runner.train(X_train, D_train, X_dev, D_dev)
-        print(lx)
         run_loss = lx
+        adjusted_loss = adjust_loss(run_loss, fraction_lost,q)
 
-        adjusted_loss = -1
 
         print("Unadjusted: %.03f" % np.exp(run_loss))
         print("Adjusted for missing vocab: %.03f" % np.exp(adjusted_loss))
