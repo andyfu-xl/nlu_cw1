@@ -16,6 +16,7 @@ class GRU(GRUAbstract):
     Do NOT modify any other methods!
     Do NOT change any method signatures!
     '''
+
     def __init__(self, vocab_size, hidden_dims, out_vocab_size):
         '''
          DO NOT CHANGE THIS
@@ -53,9 +54,15 @@ class GRU(GRUAbstract):
         ##########################
         # --- your code here --- #
         ##########################
+        xt = make_onehot(x, self.vocab_size)
+        r = sigmoid(self.Vr.dot(xt) + self.Ur.dot(s_previous))
+        z = sigmoid(self.Vz.dot(xt) + self.Uz.dot(s_previous))
+        h = np.tanh(self.Vh.dot(xt) + self.Uh.dot(r * s_previous))
+        s = z * s_previous + (1 - z) * h
+        net_out = self.W.dot(s)
+        y = softmax(net_out)
 
         return y, s, h, z, r
-
 
     def acc_deltas_np(self, x, d, y, s):
         '''
@@ -78,6 +85,9 @@ class GRU(GRUAbstract):
         ##########################
         # --- your code here --- #
         ##########################
+        t = len(x) - 1
+        d_vec = make_onehot(d[0], self.out_vocab_size)
+        delta_output = (d_vec - y[t])
         self.backward(x, t, s, delta_output)
 
     def acc_deltas_bptt_np(self, x, d, y, s, steps):
@@ -102,5 +112,7 @@ class GRU(GRUAbstract):
         ##########################
         # --- your code here --- #
         ##########################
-
+        t = len(x) - 1
+        d_vec = make_onehot(d[0], self.out_vocab_size)
+        delta_output = (d_vec - y[t])
         self.backward(x, t, s, delta_output, steps)
