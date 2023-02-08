@@ -67,7 +67,10 @@ class Runner(object):
         '''
 
         loss = 0.
-
+        last_num = len(x) - 1
+        y, _ = self.model.predict(x)
+        dt = make_onehot(d[-1], self.model.vocab_size)
+        loss -= dt.dot(np.log(y[last_num]))
         ##########################
         # --- your code here --- #
         ##########################
@@ -84,12 +87,11 @@ class Runner(object):
 
         return 1 if argmax(y[t]) == d[0], 0 otherwise
         '''
-
-        ##########################
-        # --- your code here --- #
-        ##########################
-
-        return 0
+        y, _ = self.model.predict(x)
+        if np.argmax(y[-1]) == d[0]:
+            return 1
+        else:
+            return 0
 
     def compute_mean_loss(self, X, D):
         '''
@@ -405,7 +407,7 @@ if __name__ == "__main__":
         code for training language model.
         change this to different values, or use it to get you started with your own testing class
         '''
-        train_size = 1000
+        train_size = 25000
         dev_size = 1000
         vocab_size = 2000
 
@@ -449,13 +451,26 @@ if __name__ == "__main__":
         ##########################
         model = RNN(vocab_size, hdim, vocab_size)
         model_runner = Runner(model)
-        lx = model_runner.train(X_train, D_train, X_dev, D_dev)
+        lx = model_runner.train(X_train, D_train, X_dev, D_dev, learning_rate=lr, back_steps=lookback)
         run_loss = lx
-        adjusted_loss = adjust_loss(run_loss, fraction_lost,q)
+        adjusted_loss = adjust_loss(run_loss, fraction_lost, q)
 
 
         print("Unadjusted: %.03f" % np.exp(run_loss))
         print("Adjusted for missing vocab: %.03f" % np.exp(adjusted_loss))
+
+        # Load the test set (for tuning hyperparameters)
+        docs = load_lm_dataset(data_folder + '/wiki-test.txt')
+        S_test = docs_to_indices(docs, word_to_num, 1, 1)
+        X_test, D_test = seqs_to_lmXY(S_dev)
+
+        loss_sum = sum([len(d) for d in D_test])
+        loss = sum([model_runner.compute_loss(X_test[i], D_test[i]) for i in range(len(X_test))]) / loss_sum
+        print("Unadjusted test loss: %.03f" % np.exp(run_loss))
+        print("Adjusted test loss for missing vocab: %.03f" % np.exp(adjusted_loss))
+        np.save("rnn.U.npy", model_runner.model.U)
+        np.save("rnn.V.npy", model_runner.model.V)
+        np.save("rnn.W.npy", model_runner.model.W)
 
     if mode == "train-np-rnn":
         '''
