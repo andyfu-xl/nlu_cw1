@@ -45,7 +45,7 @@ class Runner(object):
         loss = 0.
         y, _ = self.model.predict(x)
         for t in range(len(y)):
-            dt = make_onehot(d[t], self.model.vocab_size)
+            dt = make_onehot(d[t], self.model.out_vocab_size)
             loss -= dt.dot(np.log(y[t]))
 
         ##########################
@@ -69,7 +69,7 @@ class Runner(object):
         loss = 0.
         last_num = len(x) - 1
         y, _ = self.model.predict(x)
-        dt = make_onehot(d[-1], self.model.vocab_size)
+        dt = make_onehot(d[-1], self.model.out_vocab_size)
         loss -= dt.dot(np.log(y[last_num]))
         ##########################
         # --- your code here --- #
@@ -105,7 +105,7 @@ class Runner(object):
 
         mean_loss = 0.
 
-        ##########################
+        ##########################a
         # --- your code here --- #
         ##########################
         length = 0
@@ -396,6 +396,7 @@ class Runner(object):
 
         return best_loss
 
+
 if __name__ == "__main__":
 
     mode = sys.argv[1].lower()
@@ -425,7 +426,7 @@ if __name__ == "__main__":
         fraction_lost = fraq_loss(vocab, word_to_num, vocab_size)
         print(
             "Retained %d words from %d (%.02f%% of all tokens)\n" % (
-            vocab_size, len(vocab), 100 * (1 - fraction_lost)))
+                vocab_size, len(vocab), 100 * (1 - fraction_lost)))
 
         docs = load_lm_dataset(data_folder + '/wiki-train.txt')
         S_train = docs_to_indices(docs, word_to_num, 1, 1)
@@ -441,7 +442,6 @@ if __name__ == "__main__":
         X_dev = X_dev[:dev_size]
         D_dev = D_dev[:dev_size]
 
-
         # q = best unigram frequency from omitted vocab
         # this is the best expected loss out of that set
         q = vocab.freq[vocab_size] / sum(vocab.freq[vocab_size:])
@@ -453,8 +453,7 @@ if __name__ == "__main__":
         model_runner = Runner(model)
         lx = model_runner.train(X_train, D_train, X_dev, D_dev, learning_rate=lr, back_steps=lookback)
         run_loss = lx
-        adjusted_loss = adjust_loss(run_loss, fraction_lost, q)
-
+        adjusted_loss = adjust_loss(run_loss, fraction_lost, q, mode="q")
 
         print("Unadjusted: %.03f" % np.exp(run_loss))
         print("Adjusted for missing vocab: %.03f" % np.exp(adjusted_loss))
@@ -462,11 +461,16 @@ if __name__ == "__main__":
         # Load the test set (for tuning hyperparameters)
         docs = load_lm_dataset(data_folder + '/wiki-test.txt')
         S_test = docs_to_indices(docs, word_to_num, 1, 1)
-        X_test, D_test = seqs_to_lmXY(S_dev)
+        X_test, D_test = seqs_to_lmXY(S_test)
 
-        loss_sum = sum([len(d) for d in D_test])
-        loss = sum([model_runner.compute_loss(X_test[i], D_test[i]) for i in range(len(X_test))]) / loss_sum
-        print("Unadjusted test loss: %.03f" % np.exp(run_loss))
+        # todo: delete this before submitting
+        ######################################
+
+        loss = model_runner.compute_mean_loss(X_test, D_test)
+        print("Test mean loss:")
+        print(loss)
+        print("Unadjusted test loss: %.03f" % np.exp(loss))
+        adjusted_loss = adjust_loss(loss, fraction_lost, q, mode="q")
         print("Adjusted test loss for missing vocab: %.03f" % np.exp(adjusted_loss))
         np.save("rnn.U.npy", model_runner.model.U)
         np.save("rnn.V.npy", model_runner.model.V)
@@ -477,7 +481,7 @@ if __name__ == "__main__":
         starter code for parameter estimation.
         change this to different values, or use it to get you started with your own testing class
         '''
-        train_size = 10000
+        train_size = 2000
         dev_size = 1000
         vocab_size = 2000
 
@@ -495,7 +499,7 @@ if __name__ == "__main__":
         fraction_lost = fraq_loss(vocab, word_to_num, vocab_size)
         print(
             "Retained %d words from %d (%.02f%% of all tokens)\n" % (
-            vocab_size, len(vocab), 100 * (1 - fraction_lost)))
+                vocab_size, len(vocab), 100 * (1 - fraction_lost)))
 
         # load training data
         sents = load_np_dataset(data_folder + '/wiki-train.txt')
@@ -516,8 +520,18 @@ if __name__ == "__main__":
         ##########################
         # --- your code here --- #
         ##########################
+        model = RNN(vocab_size, hdim, 2)
+        model_runner = Runner(model)
+        lx = model_runner.train_np(X_train, D_train, X_dev, D_dev, learning_rate=lr, back_steps=lookback)
 
-        acc = 0.
+        # Load the test set (for tuning hyperparameters)
+        docs = load_np_dataset(data_folder + '/wiki-test.txt')
+        S_test = docs_to_indices(docs, word_to_num, 0, 0)
+        X_test, D_test = seqs_to_npXY(S_test)
+
+        accuracy = sum([model_runner.compute_acc_np(X_test[i], D_test[i]) for i in range(len(X_test))]) / len(X_test)
+
+        acc = accuracy
 
         print("Accuracy: %.03f" % acc)
 
@@ -526,7 +540,7 @@ if __name__ == "__main__":
         starter code for parameter estimation.
         change this to different values, or use it to get you started with your own testing class
         '''
-        train_size = 10000
+        train_size = 2000
         dev_size = 1000
         vocab_size = 2000
 
@@ -544,7 +558,7 @@ if __name__ == "__main__":
         fraction_lost = fraq_loss(vocab, word_to_num, vocab_size)
         print(
             "Retained %d words from %d (%.02f%% of all tokens)\n" % (
-            vocab_size, len(vocab), 100 * (1 - fraction_lost)))
+                vocab_size, len(vocab), 100 * (1 - fraction_lost)))
 
         # load training data
         sents = load_np_dataset(data_folder + '/wiki-train.txt')
@@ -565,7 +579,16 @@ if __name__ == "__main__":
         ##########################
         # --- your code here --- #
         ##########################
+        model = GRU(vocab_size, hdim, 2)
+        model_runner = Runner(model)
+        lx = model_runner.train_np(X_train, D_train, X_dev, D_dev, learning_rate=lr, back_steps=lookback)
 
-        acc = 0.
+        # Load the test set (for tuning hyperparameters)
+        docs = load_np_dataset(data_folder + '/wiki-test.txt')
+        S_test = docs_to_indices(docs, word_to_num, 0, 0)
+        X_test, D_test = seqs_to_npXY(S_test)
+
+        accuracy = sum([model_runner.compute_acc_np(X_test[i], D_test[i]) for i in range(len(X_test))]) / len(X_test)
+        acc = accuracy
 
         print("Accuracy: %.03f" % acc)

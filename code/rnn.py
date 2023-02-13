@@ -128,7 +128,7 @@ class RNN(Model):
 		##########################
 		last_num = len(x) - 1
 
-		x_vec = make_onehot(x[-1], self.out_vocab_size)
+		x_vec = make_onehot(x[-1], self.vocab_size)
 		d_vec = make_onehot(d[-1], self.out_vocab_size)
 		delta_out = (d_vec - y[last_num])  # * (np.ones(y[t].shape))
 		delta_in = (self.W.T.dot(delta_out)) * (s[last_num] * (np.ones(s[last_num].shape) - s[last_num]))
@@ -159,7 +159,7 @@ class RNN(Model):
 			##########################
 			# --- your code here --- #
 			##########################
-			x_vec = make_onehot(x[t], self.out_vocab_size)
+			x_vec = make_onehot(x[t], self.vocab_size)
 			d_vec = make_onehot(d[t], self.out_vocab_size)
 			delta_out = (d_vec - y[t])  # * (np.ones(y[t].shape))
 			delta_in = self.W.T.dot(delta_out) * (s[t] * (np.ones(s[t].shape) - s[t]))
@@ -167,8 +167,10 @@ class RNN(Model):
 			self.deltaV += np.outer(delta_in, x_vec)
 			self.deltaU += np.outer(delta_in, s[t - 1])
 			for i in range(1, steps+1):
+				if t - i < 0:
+					break
 				delta_in = self.U.T.dot(delta_in) * ((s[t - i] * (np.ones(s[t - i].shape) - s[t - i])))
-				x_vec = make_onehot(x[t-i], self.out_vocab_size)
+				x_vec = make_onehot(x[t-i], self.vocab_size)
 				self.deltaV += np.outer(delta_in, x_vec)
 				self.deltaU += np.outer(delta_in, s[t - i - 1])
 
@@ -196,7 +198,7 @@ class RNN(Model):
 		##########################
 		last_num = len(x) - 1
 
-		x_vec = make_onehot(x[-1], self.out_vocab_size)
+		x_vec = make_onehot(x[-1], self.vocab_size)
 		d_vec = make_onehot(d[-1], self.out_vocab_size)
 		delta_out = (d_vec - y[last_num])  # * (np.ones(y[t].shape))
 		delta_in = self.W.T.dot(delta_out) * (s[last_num] * (np.ones(s[last_num].shape) - s[last_num]))
@@ -204,7 +206,9 @@ class RNN(Model):
 		self.deltaV += np.outer(delta_in, x_vec)
 		self.deltaU += np.outer(delta_in, s[last_num - 1])
 		for i in range(1, steps + 1):
+			if last_num - i < 0:
+				break
 			delta_in = self.U.T.dot(delta_in) * ((s[last_num - i] * (np.ones(s[last_num - i].shape) - s[last_num - i])))
-			x_vec = make_onehot(x[last_num - i], self.out_vocab_size)
+			x_vec = make_onehot(x[last_num - i], self.vocab_size)
 			self.deltaV += np.outer(delta_in, x_vec)
 			self.deltaU += np.outer(delta_in, s[last_num - i - 1])
