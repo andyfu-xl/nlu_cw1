@@ -173,8 +173,6 @@ class RNN(Model):
 				x_vec = make_onehot(x[t-i], self.vocab_size)
 				self.deltaV += np.outer(delta_in, x_vec)
 				self.deltaU += np.outer(delta_in, s[t - i - 1])
-				if i == steps:
-					print(np.outer(delta_in, x_vec))
 
 	def acc_deltas_bptt_np(self, x, d, y, s, steps):
 		'''

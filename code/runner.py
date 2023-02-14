@@ -408,7 +408,7 @@ if __name__ == "__main__":
         code for training language model.
         change this to different values, or use it to get you started with your own testing class
         '''
-        train_size = 25000
+        train_size = 1000
         dev_size = 1000
         vocab_size = 2000
 
