@@ -94,7 +94,7 @@ class RNN(Model):
 			##########################
 			# --- your code here --- #
 			##########################
-			x_vec = make_onehot(x[t], self.out_vocab_size)
+			x_vec = make_onehot(x[t], self.vocab_size)
 			d_vec = make_onehot(d[t], self.out_vocab_size)
 
 			delta_out = (d_vec - y[t])  # * (np.ones(y[t].shape))
@@ -173,6 +173,8 @@ class RNN(Model):
 				x_vec = make_onehot(x[t-i], self.vocab_size)
 				self.deltaV += np.outer(delta_in, x_vec)
 				self.deltaU += np.outer(delta_in, s[t - i - 1])
+				if i == steps:
+					print(np.outer(delta_in, x_vec))
 
 	def acc_deltas_bptt_np(self, x, d, y, s, steps):
 		'''

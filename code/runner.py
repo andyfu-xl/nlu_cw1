@@ -105,7 +105,7 @@ class Runner(object):
 
         mean_loss = 0.
 
-        ##########################a
+        ##########################
         # --- your code here --- #
         ##########################
         length = 0
@@ -462,9 +462,6 @@ if __name__ == "__main__":
         docs = load_lm_dataset(data_folder + '/wiki-test.txt')
         S_test = docs_to_indices(docs, word_to_num, 1, 1)
         X_test, D_test = seqs_to_lmXY(S_test)
-
-        # todo: delete this before submitting
-        ######################################
 
         loss = model_runner.compute_mean_loss(X_test, D_test)
         print("Test mean loss:")
